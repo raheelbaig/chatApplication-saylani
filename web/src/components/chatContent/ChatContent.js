@@ -1,4 +1,5 @@
 import React, { Component, useState, createRef, useEffect } from "react";
+import axios from "axios";
 
 import "./chatContent.css";
 import Avatar from "../chatList/Avatar";
@@ -7,55 +8,7 @@ import ChatItem from "./ChatItem";
 export default class ChatContent extends Component {
   messagesEndRef = createRef(null);
   chatItms = [
-    {
-      key: 1,
-      image:
-        "https://pbs.twimg.com/profile_images/1116431270697766912/-NfnQHvh_400x400.jpg",
-      type: "",
-      msg: "Hi Tim, How are you?",
-    },
-    {
-      key: 2,
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTA78Na63ws7B7EAWYgTr9BxhX_Z8oLa1nvOA&usqp=CAU",
-      type: "other",
-      msg: "I am fine.",
-    },
-    {
-      key: 3,
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTA78Na63ws7B7EAWYgTr9BxhX_Z8oLa1nvOA&usqp=CAU",
-      type: "other",
-      msg: "What about you?",
-    },
-    {
-      key: 4,
-      image:
-        "https://pbs.twimg.com/profile_images/1116431270697766912/-NfnQHvh_400x400.jpg",
-      type: "",
-      msg: "Awesome these days.",
-    },
-    {
-      key: 5,
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTA78Na63ws7B7EAWYgTr9BxhX_Z8oLa1nvOA&usqp=CAU",
-      type: "other",
-      msg: "Finally. What's the plan?",
-    },
-    {
-      key: 6,
-      image:
-        "https://pbs.twimg.com/profile_images/1116431270697766912/-NfnQHvh_400x400.jpg",
-      type: "",
-      msg: "what plan mate?",
-    },
-    {
-      key: 7,
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTA78Na63ws7B7EAWYgTr9BxhX_Z8oLa1nvOA&usqp=CAU",
-      type: "other",
-      msg: "I'm taliking about the tutorial",
-    },
+
   ];
 
   constructor(props) {
@@ -92,6 +45,34 @@ export default class ChatContent extends Component {
   onStateChange = (e) => {
     this.setState({ msg: e.target.value });
   };
+  // =======================
+
+  sendMessage() {
+
+    // Make a request for a user with a given ID
+    axios.post('https://chatapp-saylani.herokuapp.com/talktochatbot', {
+      text: this.msg
+    })
+      .then(function (response) {
+        this.chatItms.push({
+          key: 1,
+          type: "other",
+          msg: response.data.text,
+          image:
+          "https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTA78Na63ws7B7EAWYgTr9BxhX_Z8oLa1nvOA&usqp=CAU",
+        });
+        
+        console.log(response);
+      })
+      .catch(function (error) {
+        // handle error
+        console.log(error);
+      })
+      .then(function () {
+        // always executed
+      });
+
+  }
 
   render() {
     return (
@@ -142,7 +123,7 @@ export default class ChatContent extends Component {
               onChange={this.onStateChange}
               value={this.state.msg}
             />
-            <button className="btnSendMsg" id="sendMsgBtn">
+            <button className="btnSendMsg" id="sendMsgBtn" onClick={(e) => { this.sendMessage() }}>
               <i className="fa fa-paper-plane"></i>
             </button>
           </div>

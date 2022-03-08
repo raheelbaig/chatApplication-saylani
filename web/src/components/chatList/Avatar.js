@@ -1,4 +1,6 @@
 import React, { Component } from "react";
+import "./chatList.css"
+
 
 export default class Avatar extends Component {
   constructor(props) {
