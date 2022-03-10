@@ -3,10 +3,22 @@ import cors from "cors";
 import dialogflow from '@google-cloud/dialogflow';
 import gcHelper from "google-credentials-helper"
 import { WebhookClient, Card, Suggestion, Image, Payload } from 'dialogflow-fulfillment';
+import mongoose from 'mongoose'
+import Cookies from 'universal-cookie'
+import {v4 as uuid} from 'uuid'
 
 
+const cookies = new Cookies()
+
+if(cookies.get('userID')=== undefined){
+
+    cookies.set('userID', uuid(), {path:'/'})
+}
+console.log(cookies.get('userID'))
+
+mongoose.connect("mongodb+srv://raheel:baig8911@cluster0.bmry1.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
 gcHelper();
-const sessionClient = new dialogflow.SessionsClient();
+const sessionClient = new dialogflow.SessionsClient()
 
 const app = express();
 app.use(cors())
@@ -15,14 +27,15 @@ app.use(express.json())
 
 const PORT = process.env.PORT || 7001;
 
-app.post("/talktochatbot", async (req, res) => {
+app.post("/api/df_text_query", async (req, res) => {
+const projectId = "rbstarhotel-lgab"
+const sessionId = req.body.sessionId || "session123"
+const text = req.body.text;
+const languageCode = "en-US"
+const event = req.body.event
 
-    const projectId = "rbstarhotel-lgab"
-    const sessionId = req.body.sessionId || "session123"
-    const query = req.body.text;
-    const languageCode = "en-US"
 
-    console.log("query: ", query, req.body);
+    console.log("query: ", text, req.body);
 
     // The path to identify the agent that owns the created intent.
     const sessionPath = sessionClient.projectAgentSessionPath(
@@ -35,7 +48,7 @@ app.post("/talktochatbot", async (req, res) => {
         session: sessionPath,
         queryInput: {
             text: {
-                text: query,
+                text: text,
                 languageCode: languageCode,
             },
         },
@@ -44,126 +57,106 @@ app.post("/talktochatbot", async (req, res) => {
         const responses = await sessionClient.detectIntent(request);
         // console.log("responses: ", responses);
         // console.log("resp: ", responses[0].queryResult.fulfillmentText);    
-        res.send({
-            text: responses[0].queryResult.fulfillmentText
-        });
+        res.send(
+             responses[0].queryResult
+        );
+
+    } catch (e) {
+        console.log("error while detecting intent: ", e)
+    }
+})
+app.post("/api/df_event_query", async (req, res) => {
+
+const projectId = "rbstarhotel-lgab"
+const sessionId = req.body.sessionId || "session123"
+const query = req.body.text;
+const languageCode = "en-US"
+const event = req.body.event
+
+    console.log("query: ", event, req.body);
+
+    // The path to identify the agent that owns the created intent.
+    const sessionPath = sessionClient.projectAgentSessionPath(
+        projectId,
+        sessionId
+    );
+
+    // The text query request.
+    const request = {
+        session: sessionPath,
+        queryInput: {
+            event: {
+                // The query to send to the dialogflow agent
+                name: event,
+                // The language used by the client (en-US)
+                languageCode: languageCode,
+              },
+        },
+    };
+    try {
+        const responses = await sessionClient.detectIntent(request);
+        // console.log("responses: ", responses);
+        // console.log("resp: ", responses[0].queryResult.fulfillmentText);    
+        res.send(
+            responses[0].queryResult
+        );
 
     } catch (e) {
         console.log("error while detecting intent: ", e)
     }
 })
 
-app.post("/webhook", (req, res) => {
-
-    const agent = new WebhookClient({ request: req, response: res });
-
-    function welcome(agent) {
-        // agent.add(new Card({
-        //     title: 'Vibrating molecules',
-        //     imageUrl: "https://media.nationalgeographic.org/assets/photos/000/263/26383.jpg",
-        //     text: 'Did you know that temperature is really just a measure of how fast molecules are vibrating around?! 😱',
-        //     buttonText: 'Temperature Wikipedia Page',
-        //     buttonUrl: "https://sysborg.com"
-        // })
-        // );
-
-        let image = new Image("https://media.nationalgeographic.org/assets/photos/000/263/26383.jpg");
-
-        agent.add(image)
-
-        // agent.add(` //ssml
-        //     <speak>
-        //         <prosody rate="slow" pitch="-2st">Can you hear me now?</prosody>
-        //     </speak>
-        // `);
-
-        agent.add('Welcome to the Weather Assistant!');
-        agent.add('you can ask me name, or weather updates');
-        agent.add(new Suggestion('what is your name'));
-        agent.add(new Suggestion('Weather update'));
-        agent.add(new Suggestion('Cancel'));
 
 
-        const facebookSuggestionChip = [{
-            "content_type": "text",
-            "title": "I am quick reply",
-            // "image_url": "http://example.com/img/red.png",
-            // "payload":"<DEVELOPER_DEFINED_PAYLOAD>"
-        },
-        {
-            "content_type": "text",
-            "title": "I am quick reply 2",
-            // "image_url": "http://example.com/img/red.png",
-            // "payload":"<DEVELOPER_DEFINED_PAYLOAD>"
-        }]
-        const payload = new Payload(
-            'FACEBOOK',
-            facebookSuggestionChip
-        );
-        agent.add(payload)
+        const OrderSchema = new mongoose.Schema({
+            userID:String,
+            room: String,
+            date: String,
+        })
+        
+        const Order = mongoose.model('Order',OrderSchema)
+        
+        
+        app.post("/",async (req,res)=>{
+            const userID = cookies.get('userID')
+        
+            const agent = new WebhookClient({request:req, response:res});
+            
+        
+            function bookRoom(agent){
+                Order.findOne({userID:userID},function(err,user){
+                    if(user==null){
+                        const orders = new Order({
+                            userID:userID,
+                            room:agent.parameters.roomType,
+                            date:agent.parameters.date
+                        })
+                        orders.save()
+                        console.log("Room Booked ");
+                    }else{
+        
+                        Order.updateOne({userID:userID},{room:agent.parameters.roomType,date:agent.parameters.date},function(err){
+                            if (err){
+                                console.log(err);
+                            }else{
+                                console.log("Room Booked");
+                            }
+                        })
+                    }
+                })
+                let responseText = `your order is ${agent.parameters.roomType} room on ${agent.parameters.date} thank you for visit.`
+                agent.add(responseText)
+            }
+            let intentMap = new Map();
+            intentMap.set('bookRoom',bookRoom)
+        
+            agent.handleRequest(intentMap)
+        })
+        
+        
 
-    }
-
-    function weather(agent) {
-        // Get parameters from Dialogflow to convert
-        const cityName = agent.parameters.cityName;
-
-        console.log(`User requested to city ${cityName}`);
-
-        //TODO: Get weather from api
-
-        // Compile and send response
-        agent.add(`in ${cityName} its 27 degree centigrade, would you like to know anything else?`);
-        agent.add(new Suggestion('What is your name'));
-        agent.add(new Suggestion('Hi'));
-        agent.add(new Suggestion('Cancel'));
-    }
-
-    function fallback(agent) {
-        agent.add('Woah! Its getting a little hot in here.');
-        agent.add(`I didn't get that, can you try again?`);
-    }
-
-    let intentMap = new Map(); // Map functions to Dialogflow intent names
-    intentMap.set('Default Welcome Intent', welcome);
-    intentMap.set('weather', weather);
-    intentMap.set('Default Fallback Intent', fallback);
-    agent.handleRequest(intentMap);
-
-})
-
-
-
-
-
-
-
-
-
-// app.post("/webhook", (req, res) => {
-
-//     const params = req.body.queryResult.parameters;
-
-//     console.log("params.cityName: ", params.cityName)
-
-//     // TODO: make api call to weather server
-
-//     res.send({
-//         "fulfillmentText": `response from webhok. weather of ${params.cityName} is 17°C.
-//                             thank you for calling weather app. good bye.`,
-
-//         "fulfillmentMessages": [
-//             {
-//                 "text": {
-//                     "text": [
-//                         `response from webhoook weather of ${params.cityName} is 17°C.
-//                         thank you for calling weather app. good bye.`
-//                     ]
-//                 }
-//             }
-//         ]
-//     })
-// })
+        
+        
 
 
 app.get("/profile", (req, res) => {
