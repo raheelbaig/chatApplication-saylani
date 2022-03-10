@@ -1,42 +1,35 @@
 import React, { Component, useState, createRef, useEffect } from "react";
 import axios from "axios";
-
+import ingUrl from './raheel.jpeg'
 import "./chatContent.css";
 import Avatar from "../chatList/Avatar";
 import ChatItem from "./ChatItem";
 
+
 export default class ChatContent extends Component {
   messagesEndRef = createRef(null);
-  chatItms = [
-
-  ];
-
+  chatItms=[]
   constructor(props) {
     super(props);
     this.state = {
+     
       chat: this.chatItms,
       msg: "",
     };
   }
-
+  
   scrollToBottom = () => {
     this.messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
   };
-
+  
   componentDidMount() {
-    window.addEventListener("keydown", (e) => {
-      if (e.keyCode == 13) {
+    window.addEventListener("click", (e) => {
+      console.log(e);
+      if (e.pointerType=== "mouse") {
         if (this.state.msg != "") {
-          this.chatItms.push({
-            key: 1,
-            type: "",
-            msg: this.state.msg,
-            image:
-              "https://pbs.twimg.com/profile_images/1116431270697766912/-NfnQHvh_400x400.jpg",
-          });
-          this.setState({ chat: [...this.chatItms] });
-          this.scrollToBottom();
-          this.setState({ msg: "" });
+          
+          
+        
         }
       }
     });
@@ -46,32 +39,45 @@ export default class ChatContent extends Component {
     this.setState({ msg: e.target.value });
   };
   // =======================
+   
 
-  sendMessage() {
-
+  sendMessage =async () =>{
     // Make a request for a user with a given ID
-    axios.post('https://chatapp-saylani.herokuapp.com/talktochatbot', {
-      text: this.msg
-    })
-      .then(function (response) {
-        this.chatItms.push({
+    this.chatItms.push({
+      key: 1,
+      type: "",
+      msg: this.state.msg,
+      image:"https://pbs.twimg.com/profile_images/1116431270697766912/-NfnQHvh_400x400.jpg",
+    });
+    this.setState({ chat: [...this.chatItms] });
+    this.scrollToBottom();
+    try {
+      const response = await axios.post('https://chatapp-saylani.herokuapp.com/api/df_text_query', {
+        text: this.state.msg
+      });
+       this.chatItms.push({
           key: 1,
           type: "other",
-          msg: response.data.text,
+          msg: response.data.fulfillmentText,
           image:
           "https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTA78Na63ws7B7EAWYgTr9BxhX_Z8oLa1nvOA&usqp=CAU",
-        });
-        
-        console.log(response);
-      })
-      .catch(function (error) {
-        // handle error
-        console.log(error);
-      })
-      .then(function () {
-        // always executed
-      });
 
+        });
+        this.setState({ chat: [...this.chatItms] });
+      console.log(response);
+    } catch (error) {
+      console.error(error);
+    }
+    
+     
+  }
+
+  checkkey (e){
+    if(e.keyCode===13){
+      this.sendMessage()
+    }else{
+      console.log("this is Error");
+    }
   }
 
   render() {
@@ -82,9 +88,9 @@ export default class ChatContent extends Component {
             <div className="current-chatting-user">
               <Avatar
                 isOnline="active"
-                image="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTA78Na63ws7B7EAWYgTr9BxhX_Z8oLa1nvOA&usqp=CAU"
+                image={ingUrl}
               />
-              <p>Tim Hover</p>
+              <p>Raheel</p>
             </div>
           </div>
 
@@ -120,10 +126,11 @@ export default class ChatContent extends Component {
             <input
               type="text"
               placeholder="Type a message here"
-              onChange={this.onStateChange}
+              onChange={(e)=>this.onStateChange(e)}
               value={this.state.msg}
+        
             />
-            <button className="btnSendMsg" id="sendMsgBtn" onClick={(e) => { this.sendMessage() }}>
+            <button className="btnSendMsg" id="sendMsgBtn" onClick={(e)=>this.sendMessage()}>
               <i className="fa fa-paper-plane"></i>
             </button>
           </div>
