@@ -47,7 +47,7 @@ export default class ChatContent extends Component {
       key: 1,
       type: "",
       msg: this.state.msg,
-      image:"https://pbs.twimg.com/profile_images/1116431270697766912/-NfnQHvh_400x400.jpg",
+      image: "https://www.google.com/url?sa=i&url=https%3A%2F%2Fpixabay.com%2Fvectors%2Fbot-icon-robot-automated-cyborg-2883144%2F&psig=AOvVaw1s0H8V1KjKNPNss3pNev6p&ust=1647084431341000&source=images&cd=vfe&ved=0CAsQjRxqFwoTCNiv1uX5vfYCFQAAAAAdAAAAABAD",
     });
     this.setState({ chat: [...this.chatItms] });
     this.scrollToBottom();
@@ -59,8 +59,7 @@ export default class ChatContent extends Component {
           key: 1,
           type: "other",
           msg: response.data.fulfillmentText,
-          image:
-          "https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTA78Na63ws7B7EAWYgTr9BxhX_Z8oLa1nvOA&usqp=CAU",
+          image:"./raheel.jpeg",
 
         });
         this.setState({ chat: [...this.chatItms] });
@@ -125,7 +124,7 @@ export default class ChatContent extends Component {
             </button>
             <input
               type="text"
-              placeholder="Type a message here"
+              placeholder="Say Hi to start chatting... "
               onChange={(e)=>this.onStateChange(e)}
               value={this.state.msg}
         
